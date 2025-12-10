@@ -135,41 +135,66 @@ if st.sidebar.button("🔮 Prediksi Score"):
     # ---------------------------------------------------
     # TAB 2 — DISTRIBUSI MODEL
     # ---------------------------------------------------
-    with tab2:
-        st.subheader("📈 Distribusi Prediksi Model")
+   with tab2:
+    # ================================
+    # 2) Distribusi Prediksi (Histogram Plotly)
+    # ================================
+    st.subheader("📈 Distribusi Nilai Prediksi Model")
 
-        sample_size = 500
-        sample_df = pd.DataFrame()
+    # --- 1. Buat sample DataFrame sesuai kolom model ---
+    sample_size = 500
+    sample_df_raw = pd.DataFrame()
 
-        for col in encoders:
-            if col in ["math score", "reading score"]:
-                sample_df[col] = np.random.randint(0, 100, sample_size)
-            else:
-                sample_df[col] = np.random.choice(encoders[col].classes_, sample_size)
+    for col in model.feature_names_in_:
+        if col in encoders:  
+            # kolom kategorikal → ambil kelas dari encoder
+            classes = encoders[col].classes_
+            sample_df_raw[col] = np.random.choice(classes, size=sample_size)
+        else:
+            # kolom numerik → generate angka 0–100
+            sample_df_raw[col] = np.random.randint(0, 100, size=sample_size)
 
-        # Encode sample
-        for col in encoders:
+    # --- 2. Encode hanya kolom kategorikal ---
+    sample_df_encoded = sample_df_raw.copy()
+
+    for col in encoders:
+        if col in sample_df_encoded.columns:
             try:
-                sample_df[col] = encoders[col].transform(sample_df[col])
-            except:
-                sample_df[col] = 0
+                sample_df_encoded[col] = encoders[col].transform(
+                    sample_df_encoded[col].to_numpy().reshape(-1, 1)
+                )
+            except Exception:
+                sample_df_encoded[col] = 0  # fallback error-safe
 
-        sample_df_final = sample_df.reindex(columns=model.feature_names_in_, fill_value=0)
-        preds = model.predict(sample_df_final)
+    # --- 3. Sesuai kolom model ---
+    sample_df_final = sample_df_encoded.reindex(columns=model.feature_names_in_, fill_value=0)
 
-        fig_hist = px.histogram(
-            preds, nbins=25, title="Distribusi Prediksi Nilai", height=450
-        )
+    # --- 4. Prediksi ---
+    preds = model.predict(sample_df_final)
 
-        fig_hist.add_vline(
-            x=prediction,
-            line_dash="dash",
-            line_color="red",
-            annotation_text=f"Prediksi Anda: {prediction:.2f}"
-        )
+    # --- 5. Plot histogram ---
+    preds_df = pd.DataFrame({'Predicted Score': preds})
 
-        fig_hist.update_layout(xaxis_range=[0, 100])
-        st.plotly_chart(fig_hist, use_container_width=True)
+    fig_hist = px.histogram(
+        preds_df,
+        x="Predicted Score",
+        nbins=25,
+        title="Distribusi Prediksi Nilai Akhir",
+        height=450
+    )
+
+    # garis prediksi pengguna
+    fig_hist.add_vline(
+        x=prediction_value,
+        line_dash="dash",
+        line_color="red",
+        annotation_text=f"Prediksi Anda: {prediction_value:.2f}",
+        annotation_position="top right"
+    )
+
+    fig_hist.update_layout(xaxis_range=[0, 100])
+
+    st.plotly_chart(fig_hist, use_container_width=True)
 
     # ---------------------------------------------------
     # TAB 3 — SCATTER MATH VS READING
