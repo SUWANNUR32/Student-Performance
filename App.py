@@ -3,6 +3,8 @@ import joblib
 import os
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt   # ← WAJIB jika pakai plt.subplots()
+
 st.write("📂 File dalam folder:", os.listdir())
 
 # Load model dan encoder sesuai nama file
