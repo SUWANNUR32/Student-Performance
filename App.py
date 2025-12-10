@@ -96,12 +96,52 @@ if st.sidebar.button("🔮 Prediksi Score"):
 
     st.success(f"🎯 **Prediksi Final Score: {prediction_value:.2f}**")
 
-    # Grafik Prediksi
+    # ================================
+    # 1) Grafik Prediksi (Bar)
+    # ================================
     fig, ax = plt.subplots()
     ax.bar(["Predicted Score"], [prediction_value])
     ax.set_ylabel("Score")
     ax.set_title("Grafik Prediksi Nilai")
     st.pyplot(fig)
+
+    # ================================
+    # 2) Distribusi Prediksi (Histogram)
+    # ================================
+    st.subheader("📈 Distribusi Nilai Prediksi Model")
+
+    # Ambil sampel random input untuk simulasi distribusi prediksi
+    # (Agar ada data distribusi visual)
+    sample_df = pd.DataFrame({
+        "gender": np.random.choice(encoders["gender"].classes_, 200),
+        "race/ethnicity": np.random.choice(encoders["race/ethnicity"].classes_, 200),
+        "lunch": np.random.choice(encoders["lunch"].classes_, 200),
+        "test preparation course": np.random.choice(encoders["test preparation course"].classes_, 200),
+        "math score": np.random.randint(0, 100, 200),
+        "reading score": np.random.randint(0, 100, 200)
+    })
+
+    # Encode semua sampel
+    for col in encoders:
+        sample_df[col] = encoders[col].transform(sample_df[col])
+
+    # Sesuaikan kolom
+    sample_df = sample_df.reindex(columns=model.feature_names_in_, fill_value=0)
+
+    # Prediksi distribusi
+    preds = model.predict(sample_df)
+
+    # Plot histogram
+    fig3, ax3 = plt.subplots()
+    ax3.hist(preds, bins=20, alpha=0.6)
+    ax3.axvline(prediction_value, color='red', linestyle='--', linewidth=2,
+                label=f"Prediksi Anda: {prediction_value:.2f}")
+    ax3.set_title("Distribusi Prediksi Model")
+    ax3.set_xlabel("Score")
+    ax3.set_ylabel("Frekuensi")
+    ax3.legend()
+
+    st.pyplot(fig3)
 
 # ================================
 # SCATTER PLOT
