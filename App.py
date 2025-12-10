@@ -48,8 +48,8 @@ race = safe_select("Race/Ethnicity", ["group A", "group B", "group C", "group D"
 lunch = safe_select("Lunch", ["standard", "free/reduced"])
 prep = safe_select("Test Preparation", ["none", "completed"])
 
-math = st.sidebar.number_input("Math Score", min_value=0, max_value=100, value=50)
-reading = st.sidebar.number_input("Reading Score", min_value=0, max_value=100, value=50)
+math = st.sidebar.number_input("Math Score", min_value=0, max_value=50, value=50)
+reading = st.sidebar.number_input("Reading Score", min_value=0, max_value=50, value=50)
 
 # ================================
 # INPUT DATAFRAME
