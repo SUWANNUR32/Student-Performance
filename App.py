@@ -1,7 +1,8 @@
 import streamlit as st
 import joblib
 import os
-
+import pandas as pd
+import numpy as np
 st.write("📂 File dalam folder:", os.listdir())
 
 # Load model dan encoder sesuai nama file
