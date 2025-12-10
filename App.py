@@ -64,7 +64,7 @@ input_df = pd.DataFrame({
 })
 
 # ================================
-# APPLY ENCODER
+# APPLY ENCODER KE INPUT
 # ================================
 for col in encoders:
     if col in input_df.columns:
@@ -73,16 +73,7 @@ for col in encoders:
 # ================================
 # COCOKKAN KOLOM DENGAN MODEL
 # ================================
-st.write("📌 Kolom model:", model.feature_names_in_)
-st.write("📌 Kolom input sebelum penyesuaian:", input_df.columns)
-
-# Reindex agar kolom sama dengan model
-input_df = input_df.reindex(columns=model.feature_names_in_)
-
-# Isi NaN (jika ada kolom yang tidak ada)
-input_df = input_df.fillna(0)
-
-st.write("📌 Kolom input final:", input_df.columns)
+input_df = input_df.reindex(columns=model.feature_names_in_, fill_value=0)
 
 # ================================
 # PREDIKSI
@@ -110,22 +101,22 @@ if st.sidebar.button("🔮 Prediksi Score"):
     # ================================
     st.subheader("📈 Distribusi Nilai Prediksi Model")
 
-    # Ambil sampel random input untuk simulasi distribusi prediksi
-    # (Agar ada data distribusi visual)
-    sample_df = pd.DataFrame({
-        "gender": np.random.choice(encoders["gender"].classes_, 200),
-        "race/ethnicity": np.random.choice(encoders["race/ethnicity"].classes_, 200),
-        "lunch": np.random.choice(encoders["lunch"].classes_, 200),
-        "test preparation course": np.random.choice(encoders["test preparation course"].classes_, 200),
-        "math score": np.random.randint(0, 100, 200),
-        "reading score": np.random.randint(0, 100, 200)
-    })
+    # Buat sample_df dinamis sesuai encoder (ANTI ERROR)
+    sample_df = pd.DataFrame()
 
-    # Encode semua sampel
-    for col in encoders:
-        sample_df[col] = encoders[col].transform(sample_df[col])
+    for col in encoders.keys():
+        classes = encoders[col].classes_
 
-    # Sesuaikan kolom
+        if col in ["math score", "reading score"]:
+            sample_df[col] = np.random.randint(0, 100, 200)
+        else:
+            sample_df[col] = np.random.choice(classes, 200)
+
+        # encode kolom kategorikal
+        if col in encoders:
+            sample_df[col] = encoders[col].transform(sample_df[col])
+
+    # Reindex agar kolom sama dengan model
     sample_df = sample_df.reindex(columns=model.feature_names_in_, fill_value=0)
 
     # Prediksi distribusi
