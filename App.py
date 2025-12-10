@@ -1,14 +1,13 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
 import joblib
-import matplotlib.pyplot as plt
+import os
 
-# ================================
-# LOAD MODEL & ENCODER
-# ================================
+st.write("📂 File dalam folder:", os.listdir())
+
+# Load model dan encoder sesuai nama file
 model = joblib.load("linear_regression_model.joblib")
-encoders = joblib.load("encoders(1).joblib")   # dict berisi label encoder setiap kolom
+encoders = joblib.load("encoders (1).joblib")
+
 
 # ================================
 # STREAMLIT PAGE CONFIG
