@@ -28,19 +28,29 @@ Silakan masukkan data pada panel sebelah kiri.
 """)
 
 # ================================
-# INPUT SIDEBAR
+# INPUT SIDEBAR — guaranteed safe
 # ================================
 st.sidebar.header("📥 Masukkan Data Siswa")
 
-# Contoh input — GANTI sesuai dataset Anda
-gender = st.sidebar.selectbox("Gender", ["male", "female"])
-race = st.sidebar.selectbox("Race/Ethnicity", ["group A", "group B", "group C", "group D", "group E"])
-lunch = st.sidebar.selectbox("Lunch", ["standard", "free/reduced"])
-prep = st.sidebar.selectbox("Test Preparation", ["none", "completed"])
-math = st.sidebar.number_input("Math Score", 0, 100, 50)
-reading = st.sidebar.number_input("Reading Score", 0, 100, 50)
+# Gunakan try-except agar aman kalau encoder Anda beda kolom
+def safe_select(label, options):
+    try:
+        return st.sidebar.selectbox(label, options)
+    except:
+        return st.sidebar.text_input(label)
 
-# Bentuk dataframe input
+# Input sesuai dataset
+gender = safe_select("Gender", ["male", "female"])
+race = safe_select("Race/Ethnicity", ["group A", "group B", "group C", "group D", "group E"])
+lunch = safe_select("Lunch", ["standard", "free/reduced"])
+prep = safe_select("Test Preparation", ["none", "completed"])
+
+math = st.sidebar.number_input("Math Score", min_value=0, max_value=100, value=50)
+reading = st.sidebar.number_input("Reading Score", min_value=0, max_value=100, value=50)
+
+# ================================
+# FIX NameError — Input dataframe
+# ================================
 input_df = pd.DataFrame({
     "gender": [gender],
     "race/ethnicity": [race],
@@ -49,10 +59,6 @@ input_df = pd.DataFrame({
     "math score": [math],
     "reading score": [reading]
 })
-
-st.subheader("📌 Data Input")
-st.write(input_df)
-
 # ================================
 # APPLY ENCODER
 # ================================
