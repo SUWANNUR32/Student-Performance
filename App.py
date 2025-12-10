@@ -132,8 +132,8 @@ if st.sidebar.button("🔮 Prediksi Score"):
         )
         st.plotly_chart(fig_bar, use_container_width=True)
 
-    # ---------------------------------------------------
-# TAB 2 — DISTRIBUSI MODEL (VERSI INTERAKTIF)
+# ---------------------------------------------------
+# TAB 2 — DISTRIBUSI MODEL (INTERAKTIF)
 # ---------------------------------------------------
 with tab2:
     st.subheader("📈 Distribusi Prediksi Model (Interaktif)")
@@ -142,7 +142,7 @@ with tab2:
     sample_df = pd.DataFrame()
 
     # -----------------------------------------
-    # 1. Generate sample (kategori + numerik)
+    # 1. Generate sample sesuai kolom model
     # -----------------------------------------
     for col in model.feature_names_in_:
         if col in encoders:
@@ -165,40 +165,48 @@ with tab2:
                 sample_df_encoded[col] = 0
 
     # -----------------------------------------
-    # 3. Reindex sesuai kolom model
+    # 3. Reindex sesuai model
     # -----------------------------------------
-    sample_df_final = sample_df_encoded.reindex(columns=model.feature_names_in_, fill_value=0)
+    sample_df_final = sample_df_encoded.reindex(
+        columns=model.feature_names_in_,
+        fill_value=0
+    )
 
     # -----------------------------------------
     # 4. Prediksi distribusi
     # -----------------------------------------
     preds = model.predict(sample_df_final)
-
     df_preds = pd.DataFrame({"Predicted Score": preds})
 
     # -----------------------------------------
-    # 5. Visualisasi interaktif Plotly
+    # 5. Plotly Histogram + KDE Curve
     # -----------------------------------------
     fig_hist = px.histogram(
         df_preds,
         x="Predicted Score",
         nbins=30,
-        marginal="box",  # Tambah boxplot di atas histogram
-        opacity=0.8,
-        title="Distribusi Prediksi Nilai Akhir (500 Sample Data)",
+        marginal="box",
+        opacity=0.85,
+        title="Distribusi Prediksi Nilai Akhir (500 sampel acak)",
         height=500
     )
 
-    # Tambah curve density (KDE)
+    # Tambahkan density curve (approximate KDE)
+    df_sorted = df_preds.sort_values(by="Predicted Score")
+    df_sorted["kde"] = df_sorted["Predicted Score"].rolling(20).mean()
+
     fig_density = px.line(
-        df_preds.sort_values(by="Predicted Score"),
+        df_sorted,
         x="Predicted Score",
-        y=df_preds["Predicted Score"].rolling(30).mean(),  # approximate KDE
+        y="kde"
     )
+
     fig_density.update_traces(line_color="orange", name="Density Curve")
     fig_hist.add_traces(fig_density.data)
 
-    # Garis prediksi user
+    # -----------------------------------------
+    # 6. Tambah garis prediksi user + mean + median
+    # -----------------------------------------
     fig_hist.add_vline(
         x=prediction,
         line_dash="dash",
@@ -207,7 +215,6 @@ with tab2:
         annotation_position="top right"
     )
 
-    # Garis Mean + Median
     fig_hist.add_vline(
         x=df_preds["Predicted Score"].mean(),
         line_color="green",
@@ -224,17 +231,17 @@ with tab2:
 
     fig_hist.update_layout(
         xaxis_range=[0, 100],
-        bargap=0.02,
         hovermode="x unified"
     )
 
     st.plotly_chart(fig_hist, use_container_width=True)
 
     # -----------------------------------------
-    # 6. Summary statistik
+    # 7. Statistik ringkas
     # -----------------------------------------
-    st.markdown("### 📌 Ringkasan Statistik Prediksi Model")
-    st.write(df_preds.describe().T)
+    st.markdown("### 📌 Statistik Prediksi Model")
+    st.dataframe(df_preds.describe().T)
+
     # ---------------------------------------------------
     # TAB 3 — SCATTER MATH VS READING
     # ---------------------------------------------------
