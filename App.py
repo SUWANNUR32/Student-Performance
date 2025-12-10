@@ -76,8 +76,13 @@ for col in encoders:
 st.subheader("🔍 Hasil Prediksi")
 
 if st.sidebar.button("🔮 Prediksi Score"):
-    input_df = input_df.reindex(columns=model.feature_names_in_)
-    st.success(f"🎯 **Prediksi Final Score: {prediction:.2f}**")
+
+    prediction = model.predict(input_df)
+
+    # Pastikan angka
+    prediction_value = float(prediction[0])
+
+    st.success(f"🎯 **Prediksi Final Score: {prediction_value:.2f}**")
 
     # Grafik Prediksi
     fig, ax = plt.subplots()
