@@ -133,69 +133,108 @@ if st.sidebar.button("🔮 Prediksi Score"):
         st.plotly_chart(fig_bar, use_container_width=True)
 
     # ---------------------------------------------------
-    # TAB 2 — DISTRIBUSI MODEL
-    # ---------------------------------------------------
-   with tab2:
-    # ================================
-    # 2) Distribusi Prediksi (Histogram Plotly)
-    # ================================
-    st.subheader("📈 Distribusi Nilai Prediksi Model")
+# TAB 2 — DISTRIBUSI MODEL (VERSI INTERAKTIF)
+# ---------------------------------------------------
+with tab2:
+    st.subheader("📈 Distribusi Prediksi Model (Interaktif)")
 
-    # --- 1. Buat sample DataFrame sesuai kolom model ---
     sample_size = 500
-    sample_df_raw = pd.DataFrame()
+    sample_df = pd.DataFrame()
 
+    # -----------------------------------------
+    # 1. Generate sample (kategori + numerik)
+    # -----------------------------------------
     for col in model.feature_names_in_:
-        if col in encoders:  
-            # kolom kategorikal → ambil kelas dari encoder
-            classes = encoders[col].classes_
-            sample_df_raw[col] = np.random.choice(classes, size=sample_size)
+        if col in encoders:
+            sample_df[col] = np.random.choice(encoders[col].classes_, size=sample_size)
         else:
-            # kolom numerik → generate angka 0–100
-            sample_df_raw[col] = np.random.randint(0, 100, size=sample_size)
+            sample_df[col] = np.random.randint(0, 100, size=sample_size)
 
-    # --- 2. Encode hanya kolom kategorikal ---
-    sample_df_encoded = sample_df_raw.copy()
+    sample_df_encoded = sample_df.copy()
 
+    # -----------------------------------------
+    # 2. Encode kategori
+    # -----------------------------------------
     for col in encoders:
         if col in sample_df_encoded.columns:
             try:
                 sample_df_encoded[col] = encoders[col].transform(
                     sample_df_encoded[col].to_numpy().reshape(-1, 1)
                 )
-            except Exception:
-                sample_df_encoded[col] = 0  # fallback error-safe
+            except:
+                sample_df_encoded[col] = 0
 
-    # --- 3. Sesuai kolom model ---
+    # -----------------------------------------
+    # 3. Reindex sesuai kolom model
+    # -----------------------------------------
     sample_df_final = sample_df_encoded.reindex(columns=model.feature_names_in_, fill_value=0)
 
-    # --- 4. Prediksi ---
+    # -----------------------------------------
+    # 4. Prediksi distribusi
+    # -----------------------------------------
     preds = model.predict(sample_df_final)
 
-    # --- 5. Plot histogram ---
-    preds_df = pd.DataFrame({'Predicted Score': preds})
+    df_preds = pd.DataFrame({"Predicted Score": preds})
 
+    # -----------------------------------------
+    # 5. Visualisasi interaktif Plotly
+    # -----------------------------------------
     fig_hist = px.histogram(
-        preds_df,
+        df_preds,
         x="Predicted Score",
-        nbins=25,
-        title="Distribusi Prediksi Nilai Akhir",
-        height=450
+        nbins=30,
+        marginal="box",  # Tambah boxplot di atas histogram
+        opacity=0.8,
+        title="Distribusi Prediksi Nilai Akhir (500 Sample Data)",
+        height=500
     )
 
-    # garis prediksi pengguna
+    # Tambah curve density (KDE)
+    fig_density = px.line(
+        df_preds.sort_values(by="Predicted Score"),
+        x="Predicted Score",
+        y=df_preds["Predicted Score"].rolling(30).mean(),  # approximate KDE
+    )
+    fig_density.update_traces(line_color="orange", name="Density Curve")
+    fig_hist.add_traces(fig_density.data)
+
+    # Garis prediksi user
     fig_hist.add_vline(
-        x=prediction_value,
+        x=prediction,
         line_dash="dash",
         line_color="red",
-        annotation_text=f"Prediksi Anda: {prediction_value:.2f}",
+        annotation_text=f"Prediksi Anda ({prediction:.2f})",
         annotation_position="top right"
     )
 
-    fig_hist.update_layout(xaxis_range=[0, 100])
+    # Garis Mean + Median
+    fig_hist.add_vline(
+        x=df_preds["Predicted Score"].mean(),
+        line_color="green",
+        annotation_text=f"Mean ({df_preds['Predicted Score'].mean():.2f})",
+        annotation_position="top left"
+    )
+
+    fig_hist.add_vline(
+        x=df_preds["Predicted Score"].median(),
+        line_color="purple",
+        annotation_text=f"Median ({df_preds['Predicted Score'].median():.2f})",
+        annotation_position="bottom left"
+    )
+
+    fig_hist.update_layout(
+        xaxis_range=[0, 100],
+        bargap=0.02,
+        hovermode="x unified"
+    )
 
     st.plotly_chart(fig_hist, use_container_width=True)
 
+    # -----------------------------------------
+    # 6. Summary statistik
+    # -----------------------------------------
+    st.markdown("### 📌 Ringkasan Statistik Prediksi Model")
+    st.write(df_preds.describe().T)
     # ---------------------------------------------------
     # TAB 3 — SCATTER MATH VS READING
     # ---------------------------------------------------
