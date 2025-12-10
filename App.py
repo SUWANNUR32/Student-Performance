@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # LOAD MODEL & ENCODER
 # ================================
 model = joblib.load("linear_regression_model.joblib")
-encoders = joblib.load("encoders.joblib")   # dict berisi label encoder setiap kolom
+encoders = joblib.load("encoders(1).joblib")   # dict berisi label encoder setiap kolom
 
 # ================================
 # STREAMLIT PAGE CONFIG
