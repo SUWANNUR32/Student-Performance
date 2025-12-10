@@ -48,8 +48,8 @@ race = safe_select("Race/Ethnicity", ["group A", "group B", "group C", "group D"
 lunch = safe_select("Lunch", ["standard", "free/reduced"])
 prep = safe_select("Test Preparation", ["none", "completed"])
 
-math = st.sidebar.number_input("Math Score", min_value=0, max_value=50, value=50)
-reading = st.sidebar.number_input("Reading Score", min_value=0, max_value=50, value=50)
+math = st.sidebar.number_input("Math Score", min_value=0, max_value=100, value=50)
+reading = st.sidebar.number_input("Reading Score", min_value=0, max_value=100, value=50)
 
 # ================================
 # INPUT DATAFRAME
@@ -71,6 +71,20 @@ for col in encoders:
         input_df[col] = encoders[col].transform(input_df[col])
 
 # ================================
+# COCOKKAN KOLOM DENGAN MODEL
+# ================================
+st.write("📌 Kolom model:", model.feature_names_in_)
+st.write("📌 Kolom input sebelum penyesuaian:", input_df.columns)
+
+# Reindex agar kolom sama dengan model
+input_df = input_df.reindex(columns=model.feature_names_in_)
+
+# Isi NaN (jika ada kolom yang tidak ada)
+input_df = input_df.fillna(0)
+
+st.write("📌 Kolom input final:", input_df.columns)
+
+# ================================
 # PREDIKSI
 # ================================
 st.subheader("🔍 Hasil Prediksi")
@@ -78,21 +92,19 @@ st.subheader("🔍 Hasil Prediksi")
 if st.sidebar.button("🔮 Prediksi Score"):
 
     prediction = model.predict(input_df)
-
-    # Pastikan angka
     prediction_value = float(prediction[0])
 
     st.success(f"🎯 **Prediksi Final Score: {prediction_value:.2f}**")
 
     # Grafik Prediksi
     fig, ax = plt.subplots()
-    ax.bar(["Predicted Score"], [prediction])
+    ax.bar(["Predicted Score"], [prediction_value])
     ax.set_ylabel("Score")
     ax.set_title("Grafik Prediksi Nilai")
     st.pyplot(fig)
 
 # ================================
-# SCATTER PLOT - Math vs Reading
+# SCATTER PLOT
 # ================================
 st.subheader("📊 Grafik Hubungan Math vs Reading (Input Anda)")
 
@@ -101,5 +113,4 @@ ax2.scatter([math], [reading])
 ax2.set_xlabel("Math Score")
 ax2.set_ylabel("Reading Score")
 ax2.set_title("Scatter Plot Math vs Reading")
-
 st.pyplot(fig2)
